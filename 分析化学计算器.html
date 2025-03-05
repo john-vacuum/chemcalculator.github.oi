@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>化学分析计算器 Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4CAF50;
+            --secondary-color: #45a049;
+            --background: #f8f9fa;
+            --mad-color: #2196F3;
+            --ramd-color: #9C27B0;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: var(--background);
+            margin: 0;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+            padding: 2.5rem;
+            transition: transform 0.3s ease;
+        }
+
+        .container:hover {
+            transform: translateY(-2px);
+        }
+
+        h2 {
+            color: var(--primary-color);
+            font-weight: 500;
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 2.2rem;
+            letter-spacing: 1px;
+        }
+
+        .input-group {
+            position: relative;
+            margin: 1.5rem 0;
+        }
+
+        #inputData {
+            width: 100%;
+            padding: 1rem 1.5rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        #inputData:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(76,175,80,0.2);
+        }
+
+        .calculate-btn {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            width: 100%;
+            letter-spacing: 0.5px;
+        }
+
+        .calculate-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+            box-shadow: 0 5px 15px rgba(76,175,80,0.3);
+        }
+
+        #results {
+            margin-top: 2rem;
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 1.5rem;
+            display: none;
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            margin: 0.5rem 0;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .result-label {
+            color: #666;
+            font-weight: 500;
+        }
+
+        .result-value {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .error {
+            color: #e53935;
+            background: #ffebee;
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            margin-top: 1rem;
+        }
+
+        /* 特殊结果项颜色 */
+        .result-item:nth-child(4) .result-value { color: #FF9800; }  /* RSD */
+        .result-item:nth-child(5) .result-value { color: var(--mad-color); }  /* MAD */
+        .result-item:nth-child(6) .result-value { color: var(--ramd-color); }  /* RAMD */
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 1.5rem;
+                margin: 1rem;
+            }
+
+            h2 {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>🔬 化学分析计算器 Pro</h2>
+        <div class="input-group">
+            <input type="text" id="inputData"
+                   placeholder="示例输入：12.3, 13.5，14.6, 15.7"
+                   aria-label="分析数据输入">
+        </div>
+        <button class="calculate-btn" onclick="calculateStats()">
+            🚀 一键计算
+        </button>
+        <div id="results"></div>
+    </div>
+
+    <script>
+        function showResult(icon, label, value) {
+            return `
+                <div class="result-item">
+                    <span class="result-label">${icon} ${label}</span>
+                    <span class="result-value">${value}</span>
+                </div>
+            `;
+        }
+
+        function calculateStats() {
+            const input = document.getElementById('inputData').value;
+            const data = input.replace(/，/g, ',')
+                             .split(',')
+                             .map(x => parseFloat(x.trim()))
+                             .filter(x => !isNaN(x));
+
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '';
+            resultsDiv.style.display = 'block';
+
+            if (data.length < 1) {
+                resultsDiv.innerHTML = `
+                    <div class="error">
+                        ⚠️ 请输入有效的数值数据
+                    </div>
+                `;
+                return;
+            }
+
+            // 基础计算
+            const mean = data.reduce((a, b) => a + b, 0) / data.length;
+
+            // 绝对偏差计算
+            const absoluteDeviations = data.map(x => Math.abs(x - mean));
+
+            // 平均偏差 (MAD)
+            const mad = absoluteDeviations.reduce((a, b) => a + b, 0) / data.length;
+
+            // 相对平均偏差 (RAMD)
+            let ramd = (mad / mean) * 100;
+
+            // 方差和标准差
+            const variance = absoluteDeviations
+                .map(x => Math.pow(x, 2))
+                .reduce((a, b) => a + b, 0) / (data.length - 1);
+            const sd = Math.sqrt(variance);
+            const rsd = (sd / mean) * 100;
+
+            // 结果组装
+            let resultsHTML = `
+                ${showResult('📌', '数据个数', data.length)}
+                ${showResult('⚖️', '平均值', mean.toFixed(4))}
+                ${showResult('📏', '标准偏差', sd.toFixed(4))}
+                ${showResult('📈', '相对标准偏差 (RSD)', rsd.toFixed(2) + '%')}
+                ${showResult('📊', '平均偏差 (MAD)', mad.toFixed(4))}
+                ${showResult('📐', '相对平均偏差 (RAMD)', ramd.toFixed(2) + '%')}
+                ${showResult('🧮', '方差', variance.toFixed(4))}
+            `;
+
+            // 零值保护
+            if (mean === 0) {
+                resultsHTML += `
+                    <div class="error">
+                        ⚠️ 平均值为零，相对偏差计算无效
+                    </div>
+                `;
+            }
+
+            resultsDiv.innerHTML = resultsHTML;
+        }
+
+        // 回车键支持
+        document.getElementById('inputData').addEventListener('keydown', e => {
+            if (e.key === 'Enter') calculateStats();
+        });
+    </script>
+</body>
+</html>
